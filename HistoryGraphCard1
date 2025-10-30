@@ -1,0 +1,11 @@
+type: history-graph
+title: NerdAxe Performance History
+entities:
+  - entity: sensor.nerdaxe_hash_rate
+    name: Hash Rate
+  - entity: sensor.nerdaxe_temperature
+    name: Temperature
+  - entity: sensor.nerdaxe_shares_accepted
+    name: Shares Accepted
+hours_to_show: 24
+refresh_interval: 0
