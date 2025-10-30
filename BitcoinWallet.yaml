@@ -1,0 +1,165 @@
+# Bitcoin Wallet Monitoring
+# config/packages/bitcoin_wallet.yaml
+#
+# Configuration required:
+# 1. Line 10: Change to your Bitcoin wallet address
+# 2. Line 16: Change to your Bitcoin wallet address (must match line 10)
+# 3. Line 26: Change to your Bitcoin wallet address (must match line 10)
+
+input_text:
+  bitcoin_wallet_address:
+    name: Bitcoin Wallet Address
+    #Feel free to donate :)
+    initial: "3KVsNviwpxqziUkwkSdhmWzTT5HZFeFtpm"
+    max: 64
+    icon: mdi:bitcoin
+
+rest:
+  - resource_template: "https://blockchain.info/balance?active={{ states('input_text.bitcoin_wallet_address') }}"
+    scan_interval: 3600
+    timeout: 10
+    sensor:
+      - name: "Bitcoin Wallet Monitor"
+        unique_id: bitcoin_wallet_monitor
+        icon: mdi:wallet
+        value_template: >
+          {% set wallet = states('input_text.bitcoin_wallet_address') %}
+          {% set wallet_data = value_json[wallet] %}
+          {% if wallet_data is defined %}
+            {{ (wallet_data.final_balance / 100000000) | round(8) }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "BTC"
+        json_attributes_path: "$.[?(@)]"
+        json_attributes:
+          - n_tx
+          - total_received
+          - total_sent
+          - final_balance
+
+  - resource: "https://api.coinbase.com/v2/exchange-rates?currency=BTC"
+    scan_interval: 900
+    sensor:
+      - name: "Bitcoin Price USD"
+        unique_id: bitcoin_price_usd
+        icon: mdi:currency-usd
+        value_template: "{{ value_json.data.rates.USD | float | round(2) }}"
+        unit_of_measurement: "USD"
+        device_class: monetary
+        
+      - name: "Bitcoin Price GBP"
+        unique_id: bitcoin_price_gbp
+        icon: mdi:currency-gbp
+        value_template: "{{ value_json.data.rates.GBP | float | round(2) }}"
+        unit_of_measurement: "GBP"
+        device_class: monetary
+
+template:
+  - sensor:
+      # Total received from mining
+      - name: "Bitcoin Total Received"
+        unique_id: bitcoin_total_received
+        availability: "{{ state_attr('sensor.bitcoin_wallet_monitor', 'total_received') is not none }}"
+        state: >
+          {% set satoshis = state_attr('sensor.bitcoin_wallet_monitor', 'total_received') | int(0) %}
+          {{ (satoshis / 100000000) | round(8) }}
+        unit_of_measurement: "BTC"
+        icon: mdi:arrow-down-bold
+        
+      # Transaction count
+      - name: "Bitcoin Transaction Count"
+        unique_id: bitcoin_transaction_count
+        availability: "{{ state_attr('sensor.bitcoin_wallet_monitor', 'n_tx') is not none }}"
+        state: "{{ state_attr('sensor.bitcoin_wallet_monitor', 'n_tx') }}"
+        icon: mdi:swap-horizontal
+        
+      # Mining earnings in USD
+      - name: "Bitcoin Mining Earnings USD"
+        unique_id: bitcoin_mining_earnings_usd
+        state: >
+          {% set received = state_attr('sensor.bitcoin_wallet_monitor', 'total_received') | int(0) %}
+          {% set earnings_btc = received / 100000000 %}
+          {% set price = states('sensor.bitcoin_price_usd') | float(0) %}
+          {{ (earnings_btc * price) | round(2) }}
+        unit_of_measurement: "USD"
+        device_class: monetary
+        icon: mdi:currency-usd
+        
+      # Mining earnings in GBP
+      - name: "Bitcoin Mining Earnings GBP"
+        unique_id: bitcoin_mining_earnings_gbp
+        state: >
+          {% set received = state_attr('sensor.bitcoin_wallet_monitor', 'total_received') | int(0) %}
+          {% set earnings_btc = received / 100000000 %}
+          {% set price = states('sensor.bitcoin_price_gbp') | float(0) %}
+          {{ (earnings_btc * price) | round(2) }}
+        unit_of_measurement: "GBP"
+        device_class: monetary
+        icon: mdi:currency-gbp
+
+input_number:
+  bitcoin_last_tx_count:
+    name: Bitcoin Last Transaction Count
+    min: 0
+    max: 100000
+    step: 1
+    mode: box
+    icon: mdi:counter
+
+automation:
+  # Track new mining payouts
+  - id: bitcoin_update_tx_counter
+    alias: "Bitcoin - Update Transaction Counter"
+    description: "Track new transactions"
+    trigger:
+      - platform: state
+        entity_id: sensor.bitcoin_transaction_count
+    condition:
+      - condition: template
+        value_template: >
+          {{ trigger.to_state.state | int(0) > trigger.from_state.state | int(0) }}
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.bitcoin_last_tx_count
+        data:
+          value: "{{ states('sensor.bitcoin_transaction_count') }}"
+      - service: persistent_notification.create
+        data:
+          title: "New Bitcoin Transaction"
+          message: >
+            New transaction detected on your wallet.
+            
+            Total Received: {{ states('sensor.bitcoin_total_received') }} BTC
+            Value: £{{ states('sensor.bitcoin_mining_earnings_gbp') }}
+            
+            Total transactions: {{ states('sensor.bitcoin_transaction_count') }}
+          notification_id: bitcoin_new_transaction
+
+  # Price movement alerts
+  - id: bitcoin_price_alert
+    alias: "Bitcoin - Price Change Alert"
+    description: "Alert on major price movements"
+    trigger:
+      - platform: state
+        entity_id: sensor.bitcoin_price_usd
+    condition:
+      - condition: template
+        value_template: >
+          {% set old = trigger.from_state.state | float(0) %}
+          {% set new = trigger.to_state.state | float(0) %}
+          {% set change = ((new - old) / old * 100) | abs %}
+          {{ change > 5 }}
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "Bitcoin Price Alert"
+          message: >
+            {% set old = trigger.from_state.state | float(0) %}
+            {% set new = trigger.to_state.state | float(0) %}
+            {% set change = ((new - old) / old * 100) %}
+            Bitcoin price {{ 'increased' if change > 0 else 'decreased' }} by {{ change | abs | round(1) }}%
+            
+            Current Price: £{{ states('sensor.bitcoin_price_gbp') }}
+            Mining Earnings: £{{ states('sensor.bitcoin_mining_earnings_gbp') }}
