@@ -1,0 +1,54 @@
+type: grid
+columns: 2
+square: false
+cards:
+  - type: entity
+    entity: binary_sensor.nerdaxe_miner_online
+    name: NerdAxe Status
+    icon: mdi:bitcoin
+  - type: entity
+    entity: sensor.nerdaxe_wallet_status
+    name: Wallet Status
+  - type: gauge
+    entity: sensor.nerdaxe_hash_rate
+    name: Hash Rate
+    min: 0
+    max: 1000
+    needle: true
+    segments:
+      - from: 0
+        color: "#db4437"
+      - from: 100
+        color: "#ffa600"
+      - from: 500
+        color: "#43a047"
+  - type: gauge
+    entity: sensor.nerdaxe_temperature
+    name: Chip Temperature
+    min: 0
+    max: 100
+    needle: true
+    segments:
+      - from: 0
+        color: "#43a047"
+      - from: 60
+        color: "#ffa600"
+      - from: 80
+        color: "#db4437"
+  - type: statistics-graph
+    entities:
+      - sensor.nerdaxe_shares_accepted
+      - sensor.nerdaxe_shares_rejected
+    days_to_show: 7
+    chart_type: bar
+    title: Share Statistics
+  - type: markdown
+    content: |
+      ## Pool Information
+      **Host**: {{ state_attr('sensor.nerdaxe_miner', 'stratumURL') }}
+
+      **Port**: {{ state_attr('sensor.nerdaxe_miner', 'stratumPort') }}
+
+      **Worker**: {{ states('sensor.nerdaxe_worker_name') }}
+
+      **Ping**: {{ state_attr('sensor.nerdaxe_miner', 'pingAvg') }} ms
