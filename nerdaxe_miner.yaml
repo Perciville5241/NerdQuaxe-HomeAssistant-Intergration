@@ -1,0 +1,417 @@
+# NerdAxe Bitcoin Miner Monitoring for Home Assistant
+# Place in: config/packages/nerdaxe_miner.yaml
+#
+# Configuration required before use:
+# 1. Line 14: Change miner IP address (currently YourAxeIP
+# 2. Line 60: Change expected wallet address (currently 3KVsNviwpxqziUkwkSdhmWzTT5HZFeFtpm)
+# 3. Line 232, 261, 279: Uncomment mobile notifications and change YOUR_PHONE to your device name
+#    (e.g., mobile_app_pixel_7, mobile_app_iphone)
+# 4. Line 296: Optionally change temperature warning threshold (currently 80°C)
+# 5. Line 308: Optionally change temperature normal threshold (currently 70°C)
+# 6. Line 318: Optionally change daily report time (currently 20:00)
+
+rest:
+  - resource: http://youraxeIP/api/system/info?ts=0
+    scan_interval: 30
+    timeout: 10
+    sensor:
+      - name: "NerdAxe Miner"
+        unique_id: nerdaxe_miner_status
+        icon: mdi:bitcoin
+        value_template: >
+          {% if value_json.isStratumConnected is defined %}
+            online
+          {% else %}
+            offline
+          {% endif %}
+        availability: "{{ value_json.stratumURL is defined }}"
+        json_attributes:
+          - stratumURL
+          - stratumPort
+          - stratumUser
+          - fallbackStratumURL
+          - fallbackStratumPort
+          - fallbackStratumUser
+          - frequency
+          - hostname
+          - uptimeSeconds
+          - version
+          - temp
+          - vrTemp
+          - hashRate
+          - hashRate_1m
+          - hashRate_10m
+          - hashRate_1h
+          - hashRate_1d
+          - bestDiff
+          - bestSessionDiff
+          - sharesAccepted
+          - sharesRejected
+          - poolDifficulty
+          - power
+          - voltage
+          - current
+          - fanspeed
+          - fanrpm
+          - isStratumConnected
+          - isUsingFallbackStratum
+          - deviceModel
+          - ASICModel
+          - coreVoltage
+          - coreVoltageActual
+
+# Expected wallet address (can also be changed via UI)
+input_text:
+  nerdaxe_expected_wallet:
+    name: NerdAxe Expected Wallet
+    # Feel free to donate :)
+    initial: "3KVsNviwpxqziUkwkSdhmWzTT5HZFeFtpm"
+    max: 64
+    icon: mdi:wallet
+
+template:
+  - sensor:
+      # Extract wallet address from stratum user
+      - name: "NerdAxe Wallet Address"
+        unique_id: nerdaxe_wallet_address
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: >
+          {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+          {% if user %}
+            {{ user.split('.')[0] }}
+          {% else %}
+            unknown
+          {% endif %}
+        icon: mdi:wallet
+        
+      - name: "NerdAxe Worker Name"
+        unique_id: nerdaxe_worker_name
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: >
+          {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+          {% if user and '.' in user %}
+            {{ user.split('.')[1] }}
+          {% else %}
+            unknown
+          {% endif %}
+        icon: mdi:worker
+        
+      # Check if mining to correct wallet
+      - name: "NerdAxe Wallet Status"
+        unique_id: nerdaxe_wallet_status
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: >
+          {% set expected = states('input_text.nerdaxe_expected_wallet') %}
+          {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+          {% if user %}
+            {% set actual = user.split('.')[0] %}
+            {% if actual == expected %}
+              Valid
+            {% else %}
+              INVALID
+            {% endif %}
+          {% else %}
+            Unknown
+          {% endif %}
+        icon: >
+          {% set expected = states('input_text.nerdaxe_expected_wallet') %}
+          {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+          {% if user %}
+            {% set actual = user.split('.')[0] %}
+            {% if actual == expected %}
+              mdi:check-circle
+            {% else %}
+              mdi:alert-circle
+            {% endif %}
+          {% else %}
+            mdi:help-circle
+          {% endif %}
+        attributes:
+          expected_wallet: "{{ states('input_text.nerdaxe_expected_wallet') }}"
+          actual_wallet: >
+            {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+            {% if user %}
+              {{ user.split('.')[0] }}
+            {% else %}
+              unknown
+            {% endif %}
+          wallet_valid: >
+            {% set expected = states('input_text.nerdaxe_expected_wallet') %}
+            {% set user = state_attr('sensor.nerdaxe_miner', 'stratumUser') %}
+            {% if user %}
+              {{ user.split('.')[0] == expected }}
+            {% else %}
+              false
+            {% endif %}
+      
+      - name: "NerdAxe Pool"
+        unique_id: nerdaxe_pool_host
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'stratumURL') | default('unknown') }}"
+        icon: mdi:server-network
+        attributes:
+          port: "{{ state_attr('sensor.nerdaxe_miner', 'stratumPort') }}"
+          connected: "{{ state_attr('sensor.nerdaxe_miner', 'isStratumConnected') }}"
+          difficulty: "{{ state_attr('sensor.nerdaxe_miner', 'poolDifficulty') }}"
+          using_fallback: "{{ state_attr('sensor.nerdaxe_miner', 'isUsingFallbackStratum') }}"
+      
+      - name: "NerdAxe Hash Rate"
+        unique_id: nerdaxe_hash_rate
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'hashRate') | default(0) | round(2) }}"
+        unit_of_measurement: "GH/s"
+        icon: mdi:speedometer
+        state_class: measurement
+        
+      - name: "NerdAxe Shares Accepted"
+        unique_id: nerdaxe_shares_accepted
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'sharesAccepted') | default(0) }}"
+        icon: mdi:check-circle-outline
+        
+      - name: "NerdAxe Shares Rejected"
+        unique_id: nerdaxe_shares_rejected
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'sharesRejected') | default(0) }}"
+        icon: mdi:close-circle-outline
+        
+      - name: "NerdAxe Temperature"
+        unique_id: nerdaxe_chip_temp
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'temp') | default(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        icon: mdi:thermometer
+        
+      - name: "NerdAxe Best Difficulty"
+        unique_id: nerdaxe_best_diff
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'bestDiff') | default(0) }}"
+        icon: mdi:trophy
+      
+      - name: "NerdAxe Power"
+        unique_id: nerdaxe_power
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'power') | default(0) | round(1) }}"
+        unit_of_measurement: "W"
+        device_class: power
+        state_class: measurement
+        icon: mdi:lightning-bolt
+        
+      - name: "NerdAxe Fan Speed"
+        unique_id: nerdaxe_fan_speed
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'fanrpm') | default(0) }}"
+        unit_of_measurement: "RPM"
+        icon: mdi:fan
+        attributes:
+          fan_percent: "{{ state_attr('sensor.nerdaxe_miner', 'fanspeed') }}"
+          
+      - name: "NerdAxe Uptime"
+        unique_id: nerdaxe_uptime
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: >
+          {% set seconds = state_attr('sensor.nerdaxe_miner', 'uptimeSeconds') | int %}
+          {% set days = (seconds / 86400) | int %}
+          {% set hours = ((seconds % 86400) / 3600) | int %}
+          {% set minutes = ((seconds % 3600) / 60) | int %}
+          {% if days > 0 %}
+            {{ days }}d {{ hours }}h
+          {% elif hours > 0 %}
+            {{ hours }}h {{ minutes }}m
+          {% else %}
+            {{ minutes }}m
+          {% endif %}
+        icon: mdi:timer-outline
+        attributes:
+          uptime_seconds: "{{ state_attr('sensor.nerdaxe_miner', 'uptimeSeconds') }}"
+
+  - binary_sensor:
+      - name: "NerdAxe Miner Online"
+        unique_id: nerdaxe_miner_online
+        state: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        device_class: connectivity
+        icon: >
+          {% if states('sensor.nerdaxe_miner') == 'online' %}
+            mdi:lan-connect
+          {% else %}
+            mdi:lan-disconnect
+          {% endif %}
+        
+      - name: "NerdAxe Wallet Valid"
+        unique_id: nerdaxe_wallet_valid
+        state: "{{ states('sensor.nerdaxe_wallet_status') == 'Valid' }}"
+        device_class: problem
+        icon: >
+          {% if states('sensor.nerdaxe_wallet_status') == 'Valid' %}
+            mdi:check-circle
+          {% else %}
+            mdi:alert-circle
+          {% endif %}
+
+automation:
+  # Alert if mining to wrong wallet
+  - id: nerdaxe_wallet_mismatch_alert
+    alias: "NerdAxe - Wallet Mismatch Alert"
+    description: "Alert when mining to wrong wallet address"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.nerdaxe_wallet_valid
+        to: "off"
+        for:
+          seconds: 30
+    condition:
+      - condition: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        state: "on"
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "NerdAxe Wallet Mismatch"
+          message: >
+            WARNING: Miner is using the wrong wallet address.
+            
+            Current: {{ state_attr('sensor.nerdaxe_wallet_status', 'actual_wallet') }}
+            Expected: {{ state_attr('sensor.nerdaxe_wallet_status', 'expected_wallet') }}
+            
+            Fix this in the miner config immediately.
+          notification_id: nerdaxe_wallet_mismatch
+      
+      # Uncomment to enable mobile notifications
+      # - service: notify.mobile_app_YOUR_PHONE
+      #   data:
+      #     title: "NerdAxe Wallet Mismatch"
+      #     message: >
+      #       Mining to wrong wallet! 
+      #       Current: {{ state_attr('sensor.nerdaxe_wallet_status', 'actual_wallet') }}
+      #     data:
+      #       priority: high
+      #       ttl: 0
+      #       channel: alarm_stream
+      #       importance: high
+      #       notification_icon: mdi:bitcoin
+
+  - id: nerdaxe_offline_alert
+    alias: "NerdAxe - Offline Alert"
+    description: "Alert when miner goes offline"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        to: "off"
+        for:
+          minutes: 2
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "NerdAxe Miner Offline"
+          message: >
+            Miner has been offline for 2 minutes.
+            Check network and power supply.
+          notification_id: nerdaxe_offline
+      
+      # - service: notify.mobile_app_YOUR_PHONE
+      #   data:
+      #     title: "NerdAxe Offline"
+      #     message: "Miner offline for 2 minutes"
+
+  - id: nerdaxe_back_online
+    alias: "NerdAxe - Back Online"
+    description: "Notify when miner comes back online"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        from: "off"
+        to: "on"
+    action:
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: nerdaxe_offline
+      
+      # - service: notify.mobile_app_YOUR_PHONE
+      #   data:
+      #     title: "NerdAxe Back Online"
+      #     message: >
+      #       Mining resumed at {{ state_attr('sensor.nerdaxe_miner', 'stratumURL') }}
+
+  - id: nerdaxe_high_temp_warning
+    alias: "NerdAxe - High Temperature Warning"
+    description: "Alert when chip temperature is too high"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.nerdaxe_temperature
+        above: 80
+        for:
+          minutes: 1
+    condition:
+      - condition: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        state: "on"
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "NerdAxe High Temperature"
+          message: >
+            Chip temperature is {{ states('sensor.nerdaxe_temperature') }}°C
+            Check cooling and ventilation.
+          notification_id: nerdaxe_high_temp
+
+  - id: nerdaxe_temp_normal
+    alias: "NerdAxe - Temperature Normal"
+    description: "Dismiss notification when temperature drops"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.nerdaxe_temperature
+        below: 70
+    action:
+      - service: persistent_notification.dismiss
+        data:
+          notification_id: nerdaxe_high_temp
+
+  # Daily stats summary
+  - id: nerdaxe_daily_report
+    alias: "NerdAxe - Daily Mining Report"
+    description: "Daily summary of mining stats"
+    trigger:
+      - platform: time
+        at: "20:00:00"
+    condition:
+      - condition: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        state: "on"
+    action:
+      - service: persistent_notification.create
+        data:
+          title: "NerdAxe Daily Report"
+          message: >
+            Hash Rate: {{ states('sensor.nerdaxe_hash_rate') }} GH/s
+            Shares: {{ states('sensor.nerdaxe_shares_accepted') }} accepted / {{ states('sensor.nerdaxe_shares_rejected') }} rejected
+            Best Difficulty: {{ states('sensor.nerdaxe_best_difficulty') }}
+            Temperature: {{ states('sensor.nerdaxe_temperature') }}°C
+            Wallet Status: {{ states('sensor.nerdaxe_wallet_status') }}
+          notification_id: nerdaxe_daily_report
+
+  # Check wallet on HA startup
+  - id: nerdaxe_wallet_check_startup
+    alias: "NerdAxe - Wallet Check on Startup"
+    description: "Verify wallet address when Home Assistant starts"
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - delay:
+          seconds: 30
+      - condition: state
+        entity_id: binary_sensor.nerdaxe_miner_online
+        state: "on"
+      - condition: state
+        entity_id: binary_sensor.nerdaxe_wallet_valid
+        state: "off"
+      - service: persistent_notification.create
+        data:
+          title: "NerdAxe Wallet Mismatch"
+          message: >
+            Wallet address mismatch detected on startup.
+            
+            Current: {{ state_attr('sensor.nerdaxe_wallet_status', 'actual_wallet') }}
+            Expected: {{ state_attr('sensor.nerdaxe_wallet_status', 'expected_wallet') }}
+          notification_id: nerdaxe_wallet_startup
