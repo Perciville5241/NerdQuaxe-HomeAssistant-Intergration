@@ -1,0 +1,64 @@
+type: grid
+cards:
+  - type: heading
+    heading: Major Details
+    heading_style: title
+  - type: vertical-stack
+    cards:
+      - type: glance
+        title: NerdAxe Miner
+        entities:
+          - entity: binary_sensor.nerdaxe_miner_online
+            name: Status
+          - entity: sensor.nerdaxe_wallet_status
+            name: Wallet
+          - entity: sensor.nerdaxe_hash_rate
+            name: Hash Rate
+          - entity: sensor.nerdaxe_temperature
+            name: Temp
+        show_state: true
+      - type: conditional
+        conditions:
+          - entity: sensor.nerdaxe_wallet_status
+            state_not: Valid
+          - entity: binary_sensor.nerdaxe_miner_online
+            state: "on"
+        card:
+          type: markdown
+          content: >
+            ## ⚠️ WALLET MISMATCH!
+
+            **Current**: {{ state_attr('sensor.nerdaxe_wallet_status',
+            'actual_wallet') }}
+
+            **Expected**: {{ state_attr('sensor.nerdaxe_wallet_status',
+            'expected_wallet') }}
+
+            Please check your miner configuration!
+          card_mod:
+            style: |
+              ha-card {
+                background-color: rgba(255, 0, 0, 0.1);
+                border: 2px solid red;
+              }
+      - type: conditional
+        conditions:
+          - entity: sensor.nerdaxe_wallet_status
+            state: Valid
+          - entity: binary_sensor.nerdaxe_miner_online
+            state: "on"
+        card:
+          type: markdown
+          content: >
+            ## ✅ Wallet Verified!
+
+            Your miner is configured with the correct Bitcoin wallet address.
+
+            **Wallet**: {{ state_attr('sensor.nerdaxe_wallet_status',
+            'actual_wallet') }}
+          card_mod:
+            style: |
+              ha-card {
+                background-color: rgba(76, 175, 80, 0.1);
+                border: 2px solid green;
+              }
