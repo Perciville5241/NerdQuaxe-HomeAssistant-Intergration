@@ -1,0 +1,103 @@
+type: entities
+title: NerdAxe Mining Stats
+icon: mdi:bitcoin
+show_header_toggle: false
+entities:
+  - entity: sensor.bitcoin_total_received
+  - type: section
+    label: Status
+  - entity: binary_sensor.nerdaxe_miner_online
+    name: Miner Online
+    secondary_info: last-changed
+  - entity: sensor.nerdaxe_wallet_status
+    name: Wallet Status
+  - type: section
+    label: Pool Configuration
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: stratumURL
+    name: Pool Host
+    icon: mdi:server-network
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: stratumPort
+    name: Port
+    icon: mdi:ethernet
+  - entity: sensor.nerdaxe_worker_name
+    name: Worker Name
+    icon: mdi:worker
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: poolDifficulty
+    name: Pool Difficulty
+    icon: mdi:chart-line
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: isStratumConnected
+    name: Pool Connected
+    icon: mdi:lan-connect
+  - type: section
+    label: Wallet
+  - entity: sensor.nerdaxe_wallet_address
+    name: Current Wallet
+    icon: mdi:wallet
+  - entity: input_text.nerdaxe_expected_wallet
+    name: Expected Wallet
+    icon: mdi:check-circle
+  - type: section
+    label: Mining Performance
+  - entity: sensor.nerdaxe_hash_rate
+    name: Hash Rate
+  - entity: sensor.nerdaxe_shares_accepted
+    name: Shares Accepted
+  - entity: sensor.nerdaxe_shares_rejected
+    name: Shares Rejected
+  - entity: sensor.nerdaxe_best_difficulty
+    name: Best Difficulty
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: hashRate_1h
+    name: Hash Rate (1h avg)
+    icon: mdi:chart-timeline-variant
+    suffix: " GH/s"
+  - type: section
+    label: Hardware
+  - entity: sensor.nerdaxe_temperature
+    name: Chip Temperature
+  - entity: sensor.nerdaxe_power
+    name: Power Consumption
+  - entity: sensor.nerdaxe_fan_speed
+    name: Fan Speed
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: voltage
+    name: Input Voltage
+    suffix: " mV"
+    icon: mdi:flash
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: frequency
+    name: Frequency
+    suffix: " MHz"
+    icon: mdi:sine-wave
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: coreVoltage
+    name: Core Voltage
+    suffix: " mV"
+    icon: mdi:chip
+  - type: section
+    label: System Info
+  - entity: sensor.nerdaxe_uptime
+    name: Uptime
+    icon: mdi:clock-outline
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: version
+    name: Firmware Version
+    icon: mdi:update
+  - type: attribute
+    entity: sensor.nerdaxe_miner
+    attribute: deviceModel
+    name: Device Model
+    icon: mdi:chip
