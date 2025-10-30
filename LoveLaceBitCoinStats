@@ -1,0 +1,12 @@
+type: markdown
+content: |
+  ## 💰 Bitcoin Wallet
+  
+  
+  **Mining Earned**: {{ states('sensor.bitcoin_mining_earnings') }} BTC
+  
+  **Transactions**: {{ states('sensor.bitcoin_transaction_count') }}
+  
+  ---
+  
+  **BTC Price**: ${{ states('sensor.bitcoin_price_usd') }} USD
