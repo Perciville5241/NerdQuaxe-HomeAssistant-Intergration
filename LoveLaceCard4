@@ -1,0 +1,103 @@
+type: vertical-stack
+cards:
+  - type: custom:mushroom-title-card
+    title: NerdAxe Bitcoin Miner
+    subtitle: Monitoring Dashboard
+  - type: horizontal-stack
+    cards:
+      - type: custom:mushroom-entity-card
+        entity: binary_sensor.nerdaxe_miner_online
+        name: Status
+        icon_color: >
+          {% if is_state('binary_sensor.nerdaxe_miner_online', 'on') %} green {%
+          else %} red {% endif %}
+      - type: custom:mushroom-entity-card
+        entity: sensor.nerdaxe_wallet_status
+        name: Wallet
+        icon_color: >
+          {% if is_state('sensor.nerdaxe_wallet_status', 'Valid') %} green {%
+          else %} red {% endif %}
+      - type: custom:mushroom-entity-card
+        entity: sensor.nerdaxe_hash_rate
+        name: Hash Rate
+        icon_color: blue
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.nerdaxe_miner_online
+        state: "off"
+    card:
+      type: markdown
+      content: |
+        ## ⚠️ Miner Offline
+        The miner is not responding. Check network connection and power.
+      card_mod:
+        style: |
+          ha-card {
+            background-color: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid orange;
+          }
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.nerdaxe_wallet_valid
+        state: "off"
+      - entity: binary_sensor.nerdaxe_miner_online
+        state: "on"
+    card:
+      type: markdown
+      content: >
+        ## 🚨 WALLET ADDRESS MISMATCH!
+
+
+        Current wallet: `{{ state_attr('sensor.nerdaxe_wallet_status',
+        'actual_wallet') }}`
+
+
+        Expected wallet: `{{ state_attr('sensor.nerdaxe_wallet_status',
+        'expected_wallet') }}`
+
+
+        **Action Required**: Update your miner configuration immediately!
+      card_mod:
+        style: |
+          ha-card {
+            background-color: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid red;
+          }
+  - type: conditional
+    conditions:
+      - entity: binary_sensor.nerdaxe_miner_online
+        state: "on"
+    card:
+      type: entities
+      title: Mining Statistics
+      entities:
+        - type: section
+          label: Performance
+        - entity: sensor.nerdaxe_hash_rate
+        - entity: sensor.nerdaxe_shares_accepted
+        - entity: sensor.nerdaxe_shares_rejected
+        - entity: sensor.nerdaxe_best_difficulty
+        - type: section
+          label: Pool
+        - entity: sensor.nerdaxe_pool
+        - type: attribute
+          entity: sensor.nerdaxe_pool
+          attribute: port
+          name: Port
+        - type: attribute
+          entity: sensor.nerdaxe_pool
+          attribute: ping_avg
+          name: Ping
+          suffix: ms
+        - type: section
+          label: Hardware
+        - entity: sensor.nerdaxe_temperature
+        - type: attribute
+          entity: sensor.nerdaxe_miner
+          attribute: frequency
+          name: Frequency
+          suffix: MHz
+        - type: attribute
+          entity: sensor.nerdaxe_miner
+          attribute: uptime
+          name: Uptime
