@@ -1,0 +1,16 @@
+type: entities
+title: Bitcoin Wallet
+icon: mdi:bitcoin
+entities:
+  - type: section
+    label: Bitcoin Price
+  - entity: sensor.bitcoin_price_usd
+    name: USD
+  - entity: sensor.bitcoin_price_gbp
+    name: GBP
+  - type: section
+    label: Mining Stats
+  - entity: sensor.bitcoin_total_received
+    name: Total Received
+  - entity: sensor.bitcoin_transaction_count
+    name: Transactions
