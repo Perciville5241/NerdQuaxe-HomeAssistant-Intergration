@@ -183,6 +183,14 @@ template:
         device_class: temperature
         icon: mdi:thermometer
         
+      - name: "NerdAxe VRTemperature"
+        unique_id: nerdaxe_vrchip_temp
+        availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
+        state: "{{ state_attr('sensor.nerdaxe_miner', 'vrTemp') | default(0) | round(1) }}"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        icon: mdi:thermometer
+        
       - name: "NerdAxe Best Difficulty"
         unique_id: nerdaxe_best_diff
         availability: "{{ states('sensor.nerdaxe_miner') == 'online' }}"
