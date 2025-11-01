@@ -4,11 +4,11 @@ square: false
 cards:
   - type: entity
     entity: binary_sensor.nerdaxe_miner_online
-    name: NerdAxe Status
+    name: Status
     icon: mdi:bitcoin
   - type: entity
     entity: sensor.nerdaxe_wallet_status
-    name: Wallet Status
+    name: Wallet
   - type: gauge
     entity: sensor.nerdaxe_hash_rate
     name: Hash Rate
@@ -37,10 +37,24 @@ cards:
         color: "#db4437"
   - type: markdown
     content: |
-      ##Share Statistics
+      ## Sharte Stats
 
       **Accepted**: {{ states('sensor.nerdaxe_shares_accepted') }}
+
       **Rejected**: {{ states('sensor.nerdaxe_shares_rejected') }}
+  - type: gauge
+    entity: sensor.nerdaxe_vrtemperature
+    name: VM-Chip Temperature
+    min: 0
+    max: 100
+    needle: true
+    segments:
+      - from: 0
+        color: "#43a047"
+      - from: 70
+        color: "#ffa600"
+      - from: 85
+        color: "#db4437"
   - type: markdown
     content: |
       ## Pool Information
