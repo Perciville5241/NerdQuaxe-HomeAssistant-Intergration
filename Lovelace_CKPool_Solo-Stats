@@ -1,0 +1,58 @@
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      # ⛏️ CKPool Solo Mining Stats
+      **Wallet:** `{{ states('input_text.bitcoin_wallet_address')[:10] }}...{{ states('input_text.bitcoin_wallet_address')[-10:] }}`
+  
+  - type: entities
+    title: Hash Rate Overview
+    entities:
+      - entity: sensor.ckpool_hash_rate_1_minute
+        name: 1 Minute
+      - entity: sensor.ckpool_hash_rate_5_minutes
+        name: 5 Minutes
+      - entity: sensor.ckpool_hash_rate_1_hour
+        name: 1 Hour
+      - entity: sensor.ckpool_hash_rate_1_day
+        name: 1 Day
+      - entity: sensor.ckpool_hash_rate_7_days
+        name: 7 Days
+    state_color: true
+    show_header_toggle: false
+  
+  - type: horizontal-stack
+    cards:
+      - type: statistic
+        entity: sensor.ckpool_total_shares
+        name: Total Shares
+        icon: mdi:counter
+      - type: statistic
+        entity: sensor.ckpool_workers
+        name: Workers
+        icon: mdi:pickaxe
+  
+  - type: entities
+    title: Best Performance
+    entities:
+      - entity: sensor.ckpool_best_share
+        name: Best Share
+      - entity: sensor.ckpool_best_ever
+        name: Best Ever
+    state_color: true
+    show_header_toggle: false
+  
+  - type: entities
+    title: Status
+    entities:
+      - entity: sensor.ckpool_last_share
+        name: Last Share
+      - entity: sensor.ckpool_authorised
+        name: Authorised Since
+    state_color: true
+    show_header_toggle: false
+  
+  - type: markdown
+    content: |
+      ---
+      *Updates every 15 minutes*
