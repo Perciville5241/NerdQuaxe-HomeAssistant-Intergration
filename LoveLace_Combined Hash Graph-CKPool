@@ -1,0 +1,25 @@
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      # 📊 Mining Performance
+  
+  - type: history-graph
+    title: CKPool Hash Rate Trends
+    hours_to_show: 24
+    entities:
+      - entity: sensor.ckpool_hash_rate_1_minute
+        name: 1 Min
+      - entity: sensor.ckpool_hash_rate_5_minutes
+        name: 5 Min
+      - entity: sensor.ckpool_hash_rate_1_hour
+        name: 1 Hour
+      - entity: sensor.ckpool_hash_rate_1_day
+        name: 1 Day
+  
+  - type: history-graph
+    title: Public Pool Worker Hash Rate
+    hours_to_show: 24
+    entities:
+      - entity: sensor.public_pool_worker_hash_rate
+        name: Worker Hash Rate
