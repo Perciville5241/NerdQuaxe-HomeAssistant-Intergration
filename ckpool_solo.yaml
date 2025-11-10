@@ -1,0 +1,149 @@
+# CKPool Solo Mining Monitor
+# Package for monitoring CKPool Solo mining statistics
+# Updates every 15 minutes
+
+# Note: Requires input_text.bitcoin_wallet_address entity to be defined
+# See public_pool.yaml package for the entity definition
+
+rest:
+  # CKPool Solo User Stats
+  - resource_template: "https://solo.ckpool.org/users/{{ states('input_text.bitcoin_wallet_address') }}"
+    scan_interval: 900  # 15 minutes
+    headers:
+      Accept: "application/json"
+      User-Agent: "HomeAssistant"
+    sensor:
+      - name: "CKPool Hash Rate 1 Minute"
+        unique_id: ckpool_hashrate_1m
+        value_template: >
+          {% set hr = value_json.hashrate1m | string %}
+          {% if hr == "0" %}
+            0
+          {% elif 'G' in hr %}
+            {{ (hr.replace('G', '') | float) }}
+          {% elif 'M' in hr %}
+            {{ (hr.replace('M', '') | float / 1000) | round(3) }}
+          {% elif 'T' in hr %}
+            {{ (hr.replace('T', '') | float * 1000) | round(2) }}
+          {% else %}
+            {{ (hr | float / 1000000000) | round(3) }}
+          {% endif %}
+        unit_of_measurement: "GH/s"
+        state_class: measurement
+        icon: mdi:speedometer-slow
+        
+      - name: "CKPool Hash Rate 5 Minutes"
+        unique_id: ckpool_hashrate_5m
+        value_template: >
+          {% set hr = value_json.hashrate5m | string %}
+          {% if hr == "0" %}
+            0
+          {% elif 'G' in hr %}
+            {{ (hr.replace('G', '') | float) }}
+          {% elif 'M' in hr %}
+            {{ (hr.replace('M', '') | float / 1000) | round(3) }}
+          {% elif 'T' in hr %}
+            {{ (hr.replace('T', '') | float * 1000) | round(2) }}
+          {% else %}
+            {{ (hr | float / 1000000000) | round(3) }}
+          {% endif %}
+        unit_of_measurement: "GH/s"
+        state_class: measurement
+        icon: mdi:speedometer-medium
+        
+      - name: "CKPool Hash Rate 1 Hour"
+        unique_id: ckpool_hashrate_1hr
+        value_template: >
+          {% set hr = value_json.hashrate1hr | string %}
+          {% if hr == "0" %}
+            0
+          {% elif 'G' in hr %}
+            {{ (hr.replace('G', '') | float) }}
+          {% elif 'M' in hr %}
+            {{ (hr.replace('M', '') | float / 1000) | round(3) }}
+          {% elif 'T' in hr %}
+            {{ (hr.replace('T', '') | float * 1000) | round(2) }}
+          {% else %}
+            {{ (hr | float / 1000000000) | round(3) }}
+          {% endif %}
+        unit_of_measurement: "GH/s"
+        state_class: measurement
+        icon: mdi:speedometer
+        
+      - name: "CKPool Hash Rate 1 Day"
+        unique_id: ckpool_hashrate_1d
+        value_template: >
+          {% set hr = value_json.hashrate1d | string %}
+          {% if hr == "0" %}
+            0
+          {% elif 'G' in hr %}
+            {{ (hr.replace('G', '') | float) }}
+          {% elif 'M' in hr %}
+            {{ (hr.replace('M', '') | float / 1000) | round(3) }}
+          {% elif 'T' in hr %}
+            {{ (hr.replace('T', '') | float * 1000) | round(2) }}
+          {% else %}
+            {{ (hr | float / 1000000000) | round(3) }}
+          {% endif %}
+        unit_of_measurement: "GH/s"
+        state_class: measurement
+        icon: mdi:calendar-today
+        
+      - name: "CKPool Hash Rate 7 Days"
+        unique_id: ckpool_hashrate_7d
+        value_template: >
+          {% set hr = value_json.hashrate7d | string %}
+          {% if hr == "0" %}
+            0
+          {% elif 'G' in hr %}
+            {{ (hr.replace('G', '') | float) }}
+          {% elif 'M' in hr %}
+            {{ (hr.replace('M', '') | float / 1000) | round(3) }}
+          {% elif 'T' in hr %}
+            {{ (hr.replace('T', '') | float * 1000) | round(2) }}
+          {% else %}
+            {{ (hr | float / 1000000000) | round(3) }}
+          {% endif %}
+        unit_of_measurement: "GH/s"
+        state_class: measurement
+        icon: mdi:calendar-week
+        
+      - name: "CKPool Last Share"
+        unique_id: ckpool_last_share
+        value_template: "{{ value_json.lastshare | int | timestamp_custom('%Y-%m-%d %H:%M:%S') }}"
+        device_class: timestamp
+        icon: mdi:clock-check-outline
+        
+      - name: "CKPool Workers"
+        unique_id: ckpool_workers
+        value_template: "{{ value_json.workers }}"
+        unit_of_measurement: "workers"
+        state_class: measurement
+        icon: mdi:pickaxe
+        
+      - name: "CKPool Total Shares"
+        unique_id: ckpool_total_shares
+        value_template: "{{ value_json.shares }}"
+        unit_of_measurement: "shares"
+        state_class: total_increasing
+        icon: mdi:counter
+        
+      - name: "CKPool Best Share"
+        unique_id: ckpool_best_share
+        value_template: "{{ value_json.bestshare | float | round(2) }}"
+        unit_of_measurement: ""
+        state_class: measurement
+        icon: mdi:trophy-award
+        
+      - name: "CKPool Best Ever"
+        unique_id: ckpool_best_ever
+        value_template: "{{ value_json.bestever }}"
+        unit_of_measurement: ""
+        state_class: measurement
+        icon: mdi:trophy-variant
+        
+      - name: "CKPool Authorised"
+        unique_id: ckpool_authorised
+        value_template: "{{ value_json.authorised | int | timestamp_custom('%Y-%m-%d %H:%M:%S') }}"
+        device_class: timestamp
+        icon: mdi:shield-check
