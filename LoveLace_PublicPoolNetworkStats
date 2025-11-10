@@ -1,0 +1,34 @@
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      # ₿ Bitcoin Network Status
+  
+  - type: entities
+    title: Network Overview
+    entities:
+      - entity: sensor.bitcoin_network_blocks
+        name: Current Block Height
+      - entity: sensor.bitcoin_network_hash_rate
+        name: Network Hash Rate
+      - entity: sensor.bitcoin_network_difficulty
+        name: Network Difficulty
+    state_color: true
+    show_header_toggle: false
+  
+  - type: entities
+    title: Current Block
+    entities:
+      - entity: sensor.bitcoin_current_block_weight
+        name: Block Weight
+      - entity: sensor.bitcoin_current_block_tx
+        name: Block Transactions
+      - entity: sensor.bitcoin_pooled_transactions
+        name: Pending Transactions
+    state_color: true
+    show_header_toggle: false
+  
+  - type: markdown
+    content: |
+      ---
+      *Updates every 15 minutes*
