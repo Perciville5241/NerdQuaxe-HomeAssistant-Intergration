@@ -1,0 +1,130 @@
+# Public Pool Mining Monitor
+# Package for monitoring Public Pool mining statistics
+# Updates every 15 minutes
+
+# Note: Uncomment the input_text entity below if you don't already have it defined
+# input_text:
+#   bitcoin_wallet_address:
+#     name: Bitcoin Wallet Address
+#     initial: 3KVsNviwpxqziUkwkSdhmWzTT5HZFeFtpm
+
+rest:
+  # Public Pool Client Stats
+  - resource_template: "https://public-pool.io:40557/api/client/{{ states('input_text.bitcoin_wallet_address') }}"
+    scan_interval: 900  # 15 minutes
+    headers:
+      Accept: "application/json"
+      User-Agent: "HomeAssistant"
+    sensor:
+      - name: "Public Pool Best Difficulty"
+        unique_id: public_pool_best_difficulty
+        value_template: "{{ value_json.bestDifficulty | float }}"
+        unit_of_measurement: ""
+        state_class: measurement
+        icon: mdi:trophy
+        
+      - name: "Public Pool Workers Count"
+        unique_id: public_pool_workers_count
+        value_template: "{{ value_json.workersCount }}"
+        unit_of_measurement: "workers"
+        state_class: measurement
+        icon: mdi:pickaxe
+        
+      - name: "Public Pool Worker Name"
+        unique_id: public_pool_worker_name
+        value_template: "{{ value_json.workers[0].name if value_json.workers | length > 0 else 'N/A' }}"
+        icon: mdi:account-hard-hat
+        
+      - name: "Public Pool Worker Hash Rate"
+        unique_id: public_pool_worker_hash_rate
+        value_template: >
+          {% if value_json.workers | length > 0 %}
+            {{ (value_json.workers[0].hashRate | float / 1000000000000) | round(2) }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: "TH/s"
+        state_class: measurement
+        icon: mdi:speedometer
+        
+      - name: "Public Pool Worker Best Difficulty"
+        unique_id: public_pool_worker_best_difficulty
+        value_template: >
+          {% if value_json.workers | length > 0 %}
+            {{ value_json.workers[0].bestDifficulty | float }}
+          {% else %}
+            0
+          {% endif %}
+        unit_of_measurement: ""
+        state_class: measurement
+        icon: mdi:chart-line
+        
+      - name: "Public Pool Worker Last Seen"
+        unique_id: public_pool_worker_last_seen
+        value_template: >
+          {% if value_json.workers | length > 0 %}
+            {{ value_json.workers[0].lastSeen }}
+          {% else %}
+            unknown
+          {% endif %}
+        device_class: timestamp
+        icon: mdi:clock-outline
+        
+      - name: "Public Pool Worker Session ID"
+        unique_id: public_pool_worker_session_id
+        value_template: >
+          {% if value_json.workers | length > 0 %}
+            {{ value_json.workers[0].sessionId }}
+          {% else %}
+            N/A
+          {% endif %}
+        icon: mdi:identifier
+
+  # Public Pool Network Stats
+  - resource: "https://public-pool.io:40557/api/network"
+    scan_interval: 900  # 15 minutes
+    headers:
+      Accept: "application/json"
+      User-Agent: "HomeAssistant"
+    sensor:
+      - name: "Bitcoin Network Blocks"
+        unique_id: bitcoin_network_blocks
+        value_template: "{{ value_json.blocks }}"
+        unit_of_measurement: "blocks"
+        state_class: total
+        icon: mdi:cube-outline
+        
+      - name: "Bitcoin Network Difficulty"
+        unique_id: bitcoin_network_difficulty
+        value_template: "{{ (value_json.difficulty | float / 1000000000000) | round(2) }}"
+        unit_of_measurement: "T"
+        state_class: measurement
+        icon: mdi:chart-areaspline
+        
+      - name: "Bitcoin Network Hash Rate"
+        unique_id: bitcoin_network_hash_rate
+        value_template: "{{ (value_json.networkhashps | float / 1000000000000000000) | round(2) }}"
+        unit_of_measurement: "EH/s"
+        state_class: measurement
+        icon: mdi:server-network
+        
+      - name: "Bitcoin Current Block Weight"
+        unique_id: bitcoin_current_block_weight
+        value_template: "{{ value_json.currentblockweight }}"
+        unit_of_measurement: "WU"
+        state_class: measurement
+        icon: mdi:weight
+        
+      - name: "Bitcoin Pooled Transactions"
+        unique_id: bitcoin_pooled_transactions
+        value_template: "{{ value_json.pooledtx }}"
+        unit_of_measurement: "txs"
+        state_class: measurement
+        icon: mdi:swap-horizontal
+        
+      - name: "Bitcoin Current Block TX"
+        unique_id: bitcoin_current_block_tx
+        value_template: "{{ value_json.currentblocktx }}"
+        unit_of_measurement: "txs"
+        state_class: measurement
+        icon: mdi:file-document-multiple
