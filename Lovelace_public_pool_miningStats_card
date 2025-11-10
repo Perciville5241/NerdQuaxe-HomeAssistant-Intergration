@@ -1,0 +1,37 @@
+#dependant on public_pool.yaml
+type: vertical-stack
+cards:
+  - type: markdown
+    content: |
+      # 🔨 Public Pool Mining Stats
+      **Wallet:** `{{ states('input_text.bitcoin_wallet_address')[:10] }}...{{ states('input_text.bitcoin_wallet_address')[-10:] }}`
+      **Session:** `{{ states('sensor.public_pool_worker_session_id') }}`
+  
+  - type: entities
+    title: Worker Status
+    entities:
+      - entity: sensor.public_pool_workers_count
+        name: Active Workers
+      - entity: sensor.public_pool_worker_name
+        name: Worker Name
+      - entity: sensor.public_pool_worker_hash_rate
+        name: Hash Rate
+      - entity: sensor.public_pool_worker_last_seen
+        name: Last Seen
+    state_color: true
+    show_header_toggle: false
+  
+  - type: entities
+    title: Difficulty Stats
+    entities:
+      - entity: sensor.public_pool_best_difficulty
+        name: Your Best Difficulty
+      - entity: sensor.public_pool_worker_best_difficulty
+        name: Worker Best Difficulty
+    state_color: true
+    show_header_toggle: false
+  
+  - type: markdown
+    content: |
+      ---
+      *Updates every 15 minutes*
